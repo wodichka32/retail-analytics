@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Olist: продажи и покупатели</title>
+<meta name="description" content="Интерактивный дашборд по данным бразильского маркетплейса Olist: продажи, покупатели, регионы и логистика.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=PT+Serif&display=swap">
+<style>
+  :root {
+    color-scheme: light;
+    --font-anthropic-sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --font-anthropic-serif: "PT Serif", Georgia, "Times New Roman", serif;
+    --color-bg: #f6f6f3;
+    --color-panel: #ffffff;
+    --color-fg: #1c1c1a;
+    --color-fg-muted: #66655f;
+    --color-border-line: #e2e1db;
+    --color-ok: #187a2f;
+    --color-warn: #a86a00;
+    --color-bad: #c63a3a;
+    --series-1: #2a78d6;
+    --cds-chart-grid: #ecebe6;
+    --cds-chart-axis: #c9c8c0;
+    --cds-chart-reference: #8a8982;
+    --cds-chart-muted: #c3c2b7;
+    --cds-chart-status-critical: #d03b3b;
+    --cds-surface-popover: #ffffff;
+    --cds-border: #d9d8d1;
+    --cds-text-secondary: #66655f;
+    --cds-shadow-popover: 0 6px 20px rgba(20, 20, 18, .12);
+    --cds-font-size-caption: .78rem;
+    --cds-font-size-body: .95rem;
+    --cds-font-size-heading: 1.05rem;
+    --cds-font-size-title: 1.9rem;
+    --cds-font-weight-medium: 500;
+    --cds-gap-xs: .25rem; --cds-gap-sm: .5rem; --cds-gap-md: 1rem; --cds-gap-lg: 1.5rem; --cds-gap-xl: 2.5rem;
+    --cds-pad-xs: .3rem; --cds-pad-sm: .5rem; --cds-pad-md: .85rem; --cds-pad-lg: 1.15rem; --cds-pad-xl: 2rem;
+    --cds-radius: 8px;
+    --cds-dur-slow: .4s;
+    --skeleton: #ecebe6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --color-bg: #121211;
+      --color-panel: #1c1c1a;
+      --color-fg: #f0efec;
+      --color-fg-muted: #a5a49c;
+      --color-border-line: #31312d;
+      --color-ok: #3cbf5e;
+      --color-warn: #e0a43a;
+      --color-bad: #e66767;
+      --series-1: #4a93ea;
+      --cds-chart-grid: #2a2a27;
+      --cds-chart-axis: #45453f;
+      --cds-chart-reference: #8a8982;
+      --cds-chart-muted: #56564f;
+      --cds-chart-status-critical: #e66767;
+      --cds-surface-popover: #262624;
+      --cds-border: #3a3a35;
+      --cds-text-secondary: #a5a49c;
+      --cds-shadow-popover: 0 6px 20px rgba(0, 0, 0, .45);
+      --skeleton: #2a2a27;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --color-bg: #121211;
+    --color-panel: #1c1c1a;
+    --color-fg: #f0efec;
+    --color-fg-muted: #a5a49c;
+    --color-border-line: #31312d;
+    --color-ok: #3cbf5e;
+    --color-warn: #e0a43a;
+    --color-bad: #e66767;
+    --series-1: #4a93ea;
+    --cds-chart-grid: #2a2a27;
+    --cds-chart-axis: #45453f;
+    --cds-chart-reference: #8a8982;
+    --cds-chart-muted: #56564f;
+    --cds-chart-status-critical: #e66767;
+    --cds-surface-popover: #262624;
+    --cds-border: #3a3a35;
+    --cds-text-secondary: #a5a49c;
+    --cds-shadow-popover: 0 6px 20px rgba(0, 0, 0, .45);
+    --skeleton: #2a2a27;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { background: var(--color-bg); }
+  body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-anthropic-sans);
+    font-size: 15px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page {
+    max-width: 1240px;
+    margin-inline: auto;
+    padding-block: 2rem 3rem;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .dash-skeleton { background: var(--skeleton); border-radius: var(--cds-radius); }
+  @media (prefers-reduced-motion: no-preference) {
+    .dash-skeleton { animation: pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 50% { opacity: .55; } }
+  }
+  .site-foot { margin-top: var(--cds-gap-xl); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm) var(--cds-gap-lg); }
+  .site-foot a { color: inherit; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="data.js"></script>
+<script>
+window.dash = (() => {
+  const D = window.DASH_DATA || {};
+  const draws = {};
+  const run = (name) => {
+    for (const el of document.querySelectorAll(`[data-draw="${name}"]`)) {
+      if (el.closest("[hidden]")) continue;
+      try { draws[name](el); } catch (e) { console.error(name, e); }
+    }
+  };
+  const runAll = () => Object.keys(draws).forEach(run);
+  let timer = null, lastW = 0;
+  window.addEventListener("resize", () => {
+    if (Math.abs(window.innerWidth - lastW) < 2) return;
+    clearTimeout(timer);
+    timer = setTimeout(() => { lastW = window.innerWidth; runAll(); }, 150);
+  });
+  window.addEventListener("load", () => { lastW = window.innerWidth; runAll(); });
+  return {
+    data: (id) => (Array.isArray(D[id]) ? { status: "ok", data: D[id] } : { status: "error", data: [] }),
+    draw(name, fn) { if (fn) draws[name] = fn; run(name); },
+    runAll,
+    colors: ["var(--series-1)"],
+    setLink(id) { try { history.replaceState(null, "", "#" + id); } catch (e) {} },
+  };
+})();
+</script>
+</head>
+<body>
+<div class="page">
+<style>
+  .ol { font-family: var(--font-anthropic-sans); color: var(--color-fg); display: grid; gap: var(--cds-gap-lg); }
+  .ol-head { display: grid; gap: var(--cds-gap-sm); max-width: 72rem; }
+  .ol-title { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; text-wrap: balance; }
+  .ol-take { margin: 0; font-size: var(--cds-font-size-body); color: var(--color-fg-muted); max-width: 70ch; line-height: 1.5; }
+  .ol .ol-take b, .ol .tile b { color: var(--color-fg); font-weight: 600; }
+  .ol-tabs { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs); border-bottom: 1px solid var(--color-border-line); }
+  .ol-tab { appearance: none; background: none; border: 0; border-bottom: 2px solid transparent; padding: var(--cds-pad-sm) var(--cds-pad-md); font: inherit; font-size: var(--cds-font-size-body); color: var(--color-fg-muted); cursor: pointer; margin-bottom: -1px; }
+  .ol-tab:hover { color: var(--color-fg); }
+  .ol-tab[aria-selected="true"] { color: var(--color-fg); border-bottom-color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+  .ol-tab:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
+  .ol-page { display: grid; gap: var(--cds-gap-lg); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: var(--cds-gap-md); }
+  .tile { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md) var(--cds-pad-lg); display: grid; gap: var(--cds-gap-xs); align-content: start; }
+  .tile .lbl { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .ol .tile .big { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); line-height: 1.15; font-variant-numeric: tabular-nums; }
+  .tile .sub { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: var(--cds-gap-md); }
+  .card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: grid; gap: var(--cds-gap-xs); align-content: start; min-width: 0; }
+  .card h3 { margin: 0; font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); text-wrap: balance; }
+  .card .note { margin: 0 0 var(--cds-gap-sm); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .chart { position: relative; width: 100%; }
+  .h260 { min-height: 260px; } .h300 { min-height: 300px; } .h340 { min-height: 340px; } .h420 { min-height: 420px; } .h480 { min-height: 480px; }
+  .chart svg { display: block; overflow: visible; }
+  .chart text { font-family: var(--font-anthropic-sans); }
+  .ax text, .lab { fill: var(--color-fg-muted); font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+  .ax .domain { stroke: var(--cds-chart-axis); }
+  .grid line { stroke: var(--cds-chart-grid); }
+  .grid .domain { display: none; }
+  .lab-strong { fill: var(--color-fg); font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+  .ref { stroke: var(--cds-chart-reference); stroke-width: 1; }
+  .tt { position: absolute; z-index: 5; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .tt .hd { color: var(--cds-text-secondary); margin-bottom: 2px; }
+  .tt .sw { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+  .fail { display: flex; align-items: center; justify-content: center; gap: var(--cds-gap-xs); min-height: inherit; margin: 0; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .fail::before { content: ""; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
+  [data-dash-source-state=empty] { color: transparent; }
+  [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+  .tbl-box { max-height: 34rem; overflow: auto; }
+  .tbl { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+  .tbl th { position: sticky; top: 0; background: var(--color-panel); text-align: right; font-weight: var(--cds-font-weight-medium); border-bottom: 1px solid var(--color-border-line); padding: 0; z-index: 1; }
+  .tbl th:first-child, .tbl th:nth-child(2) { text-align: left; }
+  .tbl th button { appearance: none; background: none; border: 0; font: inherit; color: var(--color-fg-muted); cursor: pointer; padding: var(--cds-pad-xs) var(--cds-pad-sm); width: 100%; text-align: inherit; white-space: nowrap; }
+  .tbl th[aria-sort] button { color: var(--color-fg); }
+  .tbl th[aria-sort="descending"] button::after { content: " ↓"; }
+  .tbl th[aria-sort="ascending"] button::after { content: " ↑"; }
+  .tbl td { padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); text-align: right; white-space: nowrap; }
+  .tbl td:first-child, .tbl td:nth-child(2) { text-align: left; }
+  .tbl tbody tr:hover td { background: var(--cds-chart-grid); }
+  .cellbar { display: inline-flex; align-items: center; gap: var(--cds-gap-xs); justify-content: flex-end; width: 100%; }
+  .cellbar i { display: inline-block; height: 8px; border-radius: 2px; }
+  @media (max-width: 40rem) { .tbl .opt { display: none; } }
+  .ol-notes { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .ol-notes summary { cursor: pointer; color: var(--color-fg); }
+  .ol-notes dl { display: grid; grid-template-columns: max-content 1fr; gap: var(--cds-gap-xs) var(--cds-gap-md); margin: var(--cds-gap-sm) 0 0; }
+  .ol-notes dt { color: var(--color-fg); }
+  .ol-notes dd { margin: 0; }
+  @media (max-width: 30rem) { .ol-notes dl { grid-template-columns: 1fr; } }
+</style>
+
+<div class="ol">
+  <header class="ol-head">
+    <h1 class="ol-title" id="top">Olist: продажи и покупатели</h1>
+    <p class="ol-take">За январь–август 2018 выручка выросла на <b data-draw="kpi" data-fmt="growth" data-source="kpi" data-field="yoy_growth" data-row="0">—</b> к тому же периоду 2017 года, но рост держится на новых покупателях: повторно покупают только <b data-draw="kpi" data-fmt="pct1" data-source="kpi" data-field="rpr" data-row="0">—</b>, а опоздание доставки снижает оценку с <b data-draw="kpi" data-fmt="score" data-source="kpi" data-field="ontime_score" data-row="0">—</b> до <b data-draw="kpi" data-fmt="score" data-source="kpi" data-field="late_score" data-row="0">—</b>.</p>
+  </header>
+
+  <nav class="ol-tabs" role="tablist" aria-label="Разделы">
+    <button class="ol-tab" role="tab" type="button" data-tab="sales" aria-selected="true">Продажи</button>
+    <button class="ol-tab" role="tab" type="button" data-tab="customers" aria-selected="false">Покупатели</button>
+    <button class="ol-tab" role="tab" type="button" data-tab="regions" aria-selected="false">Регионы</button>
+    <button class="ol-tab" role="tab" type="button" data-tab="logistics" aria-selected="false">Логистика</button>
+  </nav>
+
+  <section class="ol-page" id="sales" role="tabpanel">
+    <div class="tiles">
+      <div class="tile"><span class="lbl">Выручка</span><b class="big" data-draw="kpi" data-fmt="compact" data-source="kpi" data-field="revenue" data-row="0">—</b><span class="sub">сентябрь 2016 – сентябрь 2018</span></div>
+      <div class="tile"><span class="lbl">Заказы</span><b class="big" data-draw="kpi" data-fmt="int" data-source="kpi" data-field="orders" data-row="0">—</b><span class="sub">без отменённых и недоступных</span></div>
+      <div class="tile"><span class="lbl">Средний чек</span><b class="big" data-draw="kpi" data-fmt="money" data-source="kpi" data-field="aov" data-row="0">—</b><span class="sub">выручка по товарам на заказ</span></div>
+      <div class="tile"><span class="lbl">Медианный заказ</span><b class="big" data-draw="kpi" data-fmt="money" data-source="kpi" data-field="median_order" data-row="0">—</b><span class="sub">половина заказов дешевле</span></div>
+      <div class="tile"><span class="lbl">Рост год к году</span><b class="big" data-draw="kpi" data-fmt="growth" data-source="kpi" data-field="yoy_growth" data-row="0">—</b><span class="sub">январь–август 2018 к 2017</span></div>
+    </div>
+
+    <article class="card">
+      <h3 id="monthly-revenue">Выручка по месяцам</h3>
+      <p class="note">Январь 2017 – август 2018. Пик — ноябрь 2017 с Чёрной пятницей; с марта 2018 рост остановился.</p>
+      <div class="chart h300 dash-skeleton" data-draw="revMonthly" data-source="monthly"></div>
+    </article>
+
+    <div class="grid2">
+      <article class="card">
+        <h3 id="top-categories">Топ-15 категорий по выручке</h3>
+        <p class="note">Весь период. 18 из 74 категорий дают 80% выручки.</p>
+        <div class="chart h420 dash-skeleton" data-draw="catBars" data-source="categories"></div>
+      </article>
+      <article class="card">
+        <h3 id="category-shift">Как менялась доля категорий</h3>
+        <p class="note">Доля в выручке за январь–август 2017 и 2018 годов.</p>
+        <div class="chart h420 dash-skeleton" data-draw="catShift" data-source="categories"></div>
+      </article>
+    </div>
+
+    <article class="card">
+      <h3 id="week-hour">Когда покупают</h3>
+      <p class="note">Заказы по дням недели и часам покупки. Пик — будни с 10 до 22 часов, минимум — суббота.</p>
+      <div class="chart h260 dash-skeleton" data-draw="weekHour" data-source="week_hour"></div>
+    </article>
+  </section>
+
+  <section class="ol-page" id="customers" role="tabpanel" hidden>
+    <div class="tiles">
+      <div class="tile"><span class="lbl">Покупатели</span><b class="big" data-draw="kpi" data-fmt="int" data-source="kpi" data-field="customers" data-row="0">—</b><span class="sub">уникальные люди с валидным заказом</span></div>
+      <div class="tile"><span class="lbl">Повторные покупатели</span><b class="big" data-draw="kpi" data-fmt="pct1" data-source="kpi" data-field="rpr" data-row="0">—</b><span class="sub">две покупки и больше</span></div>
+      <div class="tile"><span class="lbl">Их доля в выручке</span><b class="big" data-draw="kpi" data-fmt="pct1" data-source="kpi" data-field="repeat_revenue_share" data-row="0">—</b><span class="sub">остальное — разовые покупки</span></div>
+      <div class="tile"><span class="lbl">Выручка на покупателя за год</span><b class="big" data-draw="kpi" data-fmt="money" data-source="kpi" data-field="clv_365" data-row="0">—</b><span class="sub">365 дней после первой покупки</span></div>
+    </div>
+
+    <article class="card">
+      <h3 id="segments">RFM-сегменты: доля покупателей и доля выручки</h3>
+      <p class="note">Крупные разовые покупатели — около трети базы и больше половины выручки.</p>
+      <div class="chart h340 dash-skeleton" data-draw="segBars" data-source="segments"></div>
+    </article>
+
+    <article class="card">
+      <h3 id="cohorts">Когортное удержание</h3>
+      <p class="note">Доля покупателей когорты, купивших снова через N месяцев после первой покупки. Месяц 0 (100%) не показан.</p>
+      <div class="chart h480 dash-skeleton" data-draw="cohortHeat" data-source="cohorts"></div>
+    </article>
+  </section>
+
+  <section class="ol-page" id="regions" role="tabpanel" hidden>
+    <article class="card">
+      <h3 id="states-table">Штаты покупателей</h3>
+      <p class="note">Нажмите на заголовок столбца, чтобы отсортировать. Срок, опоздания и оценка — по доставленным заказам.</p>
+      <div class="tbl-box">
+        <table class="tbl" data-source="states" data-row-key="state">
+          <thead>
+            <tr>
+              <th data-field="state" scope="col"><button type="button" data-sort="state">Штат</button></th>
+              <th data-field="region" scope="col" class="opt"><button type="button" data-sort="region">Регион</button></th>
+              <th data-field="revenue" scope="col" aria-sort="descending"><button type="button" data-sort="revenue">Выручка</button></th>
+              <th data-field="share" scope="col" class="opt"><button type="button" data-sort="share">Доля</button></th>
+              <th data-field="orders" scope="col" class="opt"><button type="button" data-sort="orders">Заказы</button></th>
+              <th data-field="aov" scope="col"><button type="button" data-sort="aov">Средний чек</button></th>
+              <th data-field="avg_freight" scope="col" class="opt"><button type="button" data-sort="avg_freight">Доставка</button></th>
+              <th data-field="delivery_days" scope="col"><button type="button" data-sort="delivery_days">Срок, дн.</button></th>
+              <th data-field="late_rate" scope="col"><button type="button" data-sort="late_rate">Опоздания</button></th>
+              <th data-field="avg_score" scope="col" class="opt"><button type="button" data-sort="avg_score">Оценка</button></th>
+            </tr>
+          </thead>
+          <tbody data-draw="statesBody" data-source="states"></tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="card">
+      <h3 id="aov-freight">Средний чек и стоимость доставки</h3>
+      <p class="note">Каждая точка — штат. Чем дороже доставка, тем дороже заказы: дешёвое в удалённые штаты не заказывают.</p>
+      <div class="chart h340 dash-skeleton" data-draw="aovFreight" data-source="states"></div>
+    </article>
+  </section>
+
+  <section class="ol-page" id="logistics" role="tabpanel" hidden>
+    <div class="tiles">
+      <div class="tile"><span class="lbl">Средний срок доставки</span><b class="big" data-draw="kpi" data-fmt="days" data-source="kpi" data-field="delivery_days" data-row="0">—</b><span class="sub">от покупки до получения</span></div>
+      <div class="tile"><span class="lbl">Медиана срока</span><b class="big" data-draw="kpi" data-fmt="days" data-source="kpi" data-field="median_delivery_days" data-row="0">—</b><span class="sub">половина заказов быстрее</span></div>
+      <div class="tile"><span class="lbl">Доля опозданий</span><b class="big" data-draw="kpi" data-fmt="pct1" data-source="kpi" data-field="late_rate" data-row="0">—</b><span class="sub">позже обещанной даты</span></div>
+      <div class="tile"><span class="lbl">Оценка вовремя</span><b class="big" data-draw="kpi" data-fmt="score" data-source="kpi" data-field="ontime_score" data-row="0">—</b><span class="sub">средняя, из 5</span></div>
+      <div class="tile"><span class="lbl">Оценка при опоздании</span><b class="big" data-draw="kpi" data-fmt="score" data-source="kpi" data-field="late_score" data-row="0">—</b><span class="sub">средняя, из 5</span></div>
+    </div>
+
+    <div class="grid2">
+      <article class="card">
+        <h3 id="delivery-monthly">Средний срок доставки</h3>
+        <p class="note">По месяцу покупки. Пик — февраль 2018, к августу срок сократился вдвое.</p>
+        <div class="chart h260 dash-skeleton" data-draw="deliveryLine" data-source="monthly"></div>
+      </article>
+      <article class="card">
+        <h3 id="late-monthly">Доля опоздавших заказов</h3>
+        <p class="note">По месяцу покупки. Всплески — Чёрная пятница и февраль–март 2018.</p>
+        <div class="chart h260 dash-skeleton" data-draw="lateLine" data-source="monthly"></div>
+      </article>
+    </div>
+
+    <article class="card">
+      <h3 id="score-estimate">Оценка и запас до обещанной даты</h3>
+      <p class="note">Пока заказ приходит до обещанной даты, оценка стабильна; после неё — резко падает. Края собраны: ≤ −20 и ≥ 30 дней.</p>
+      <div class="chart h340 dash-skeleton" data-draw="scoreEstimate" data-source="estimate"></div>
+    </article>
+  </section>
+
+  <details class="ol-notes">
+    <summary>Как считались показатели</summary>
+    <dl>
+      <dt>Валидный заказ</dt><dd>Статус не canceled и не unavailable.</dd>
+      <dt>Выручка</dt><dd>Сумма цен товаров валидных заказов в бразильских реалах, без стоимости доставки.</dd>
+      <dt>Покупатель</dt><dd>customer_unique_id: в Olist customer_id создаётся для каждого заказа заново.</dd>
+      <dt>Повторная покупка</dt><dd>Покупка в другой момент времени. Несколько заказов в одну секунду — один чекаут, разбитый по продавцам.</dd>
+      <dt>Опоздание</dt><dd>Дата доставки позже обещанной. Заказы с противоречивыми датами (189) исключены из логистики.</dd>
+      <dt>RFM</dt><dd>R и M — квинтили давности и суммы покупок, F — число покупок (1…5+). Дата отсчёта — 4 сентября 2018.</dd>
+      <dt>Окно трендов</dt><dd>Январь 2017 – август 2018: крайние месяцы датасета почти пустые.</dd>
+      <dt>Источник</dt><dd>Brazilian E-Commerce Public Dataset by Olist (Kaggle), слой Gold проекта Retail Analytics Platform.</dd>
+    </dl>
+  </details>
+</div>
+
+<script>
+window.U = (() => {
+  const loc = d3.formatLocale({ decimal: ",", thousands: " ", grouping: [3], currency: ["R$ ", ""] });
+  const int = loc.format(",.0f"), d1 = loc.format(",.1f"), d2 = loc.format(",.2f");
+  const pct = (v, k = 1) => loc.format(`.${k}%`)(v);
+  const money = (v) => "R$ " + int(v);
+  const compact = (v) => {
+    const a = Math.abs(v);
+    if (a >= 1e6) return "R$ " + d1(v / 1e6).replace(/,0$/, "") + " млн";
+    if (a >= 1e3) return "R$ " + int(v / 1e3) + " тыс.";
+    return money(v);
+  };
+  const MONTHS = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+  const MONTHS_FULL = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"];
+  const ym = (s) => s.slice(0, 7);
+  const monthShort = (s) => { const [y, m] = s.split("-"); return MONTHS[+m - 1] + " " + y.slice(2); };
+  const monthFull = (s) => { const [y, m] = s.split("-"); return MONTHS_FULL[+m - 1] + " " + y; };
+  const fmts = {
+    int, money, compact, d1,
+    pct0: (v) => pct(v, 0), pct1: (v) => pct(v, 1),
+    days: (v) => d1(v) + " дн.",
+    score: (v) => d2(v),
+    growth: (v) => (v > 0 ? "+" : "") + pct(v, 0),
+  };
+
+  function pending(el, r) {
+    el.replaceChildren();
+    if (r.status === "error" || r.status === "connect") {
+      el.classList.remove("dash-skeleton");
+      const p = document.createElement("p");
+      p.className = "fail";
+      p.textContent = "Не удалось загрузить";
+      el.append(p);
+    } else {
+      el.classList.add("dash-skeleton");
+    }
+  }
+
+  function ready(el, id) {
+    const r = dash.data(id);
+    if (r.status !== "ok") { pending(el, r); return null; }
+    el.replaceChildren();
+    el.classList.remove("dash-skeleton");
+    return r.data;
+  }
+
+  function svg(el, h) {
+    const w = Math.max(280, Math.floor(el.clientWidth));
+    const s = d3.select(el).append("svg").attr("width", "100%").attr("height", h).attr("viewBox", `0 0 ${w} ${h}`);
+    return { s, w, h };
+  }
+
+  function textWidth(s, texts, cls = "lab") {
+    const t = s.append("text").attr("class", cls);
+    let m = 0;
+    for (const x of texts) { t.text(x); m = Math.max(m, t.node().getComputedTextLength()); }
+    t.remove();
+    return Math.ceil(m);
+  }
+
+  function axis(g) {
+    g.attr("font-size", null).attr("font-family", null).attr("class", (g.attr("class") || "") + " ax");
+    g.selectAll(".tick line").remove();
+    return g;
+  }
+
+  function grid(g) {
+    g.attr("font-size", null).attr("font-family", null).attr("class", "grid");
+    g.selectAll("text").remove();
+    return g;
+  }
+
+  function tip(el) {
+    const t = document.createElement("div");
+    t.className = "tt";
+    t.hidden = true;
+    el.append(t);
+    return {
+      show(ev, head, lines) {
+        const rows = [];
+        const hd = document.createElement("div");
+        hd.className = "hd";
+        hd.textContent = head;
+        rows.push(hd);
+        for (const [text, color] of lines) {
+          const d = document.createElement("div");
+          if (color) { const sw = document.createElement("span"); sw.className = "sw"; sw.style.background = color; d.append(sw); }
+          d.append(text);
+          rows.push(d);
+        }
+        t.replaceChildren(...rows);
+        t.hidden = false;
+        const b = el.getBoundingClientRect();
+        let x = ev.clientX - b.left + 14, y = ev.clientY - b.top + 14;
+        if (x + t.offsetWidth > b.width) x = ev.clientX - b.left - t.offsetWidth - 14;
+        if (y + t.offsetHeight > b.height) y = ev.clientY - b.top - t.offsetHeight - 14;
+        t.style.left = Math.max(0, x) + "px";
+        t.style.top = Math.max(0, y) + "px";
+      },
+      hide() { t.hidden = true; },
+    };
+  }
+
+  return { fmts, pct, int, d1, d2, money, compact, ym, monthShort, monthFull, ready, svg, textWidth, axis, grid, tip, pending };
+})();
+</script>
+
+<script>
+dash.draw("kpi", (el) => {
+  const r = dash.data(el.dataset.source);
+  if (r.status !== "ok" || !r.data.length) { el.textContent = "—"; return; }
+  const v = r.data[+(el.dataset.row || 0)][el.dataset.field];
+  el.textContent = v == null ? "—" : U.fmts[el.dataset.fmt](v);
+});
+</script>
+
+<script>
+dash.draw("revMonthly", (el) => {
+  const rows = U.ready(el, "monthly");
+  if (!rows) return;
+  const { s, w, h } = U.svg(el, 300);
+  const y = d3.scaleLinear([0, d3.max(rows, (d) => d.revenue) * 1.15], [h - 24, 18]).nice();
+  const yt = y.ticks(5);
+  const ml = U.textWidth(s, yt.map(U.compact)) + 10;
+  const x = d3.scaleBand(rows.map((d) => d.month), [ml, w - 4]).padding(0.25);
+  s.append("g").attr("transform", `translate(${ml},0)`).call(d3.axisLeft(y).tickValues(yt).tickSize(-(w - ml - 4)).tickFormat("")).call(U.grid);
+  s.append("g").attr("transform", `translate(${ml},0)`).call(d3.axisLeft(y).tickValues(yt).tickFormat(U.compact).tickSize(0).tickPadding(8)).call(U.axis).select(".domain").remove();
+  const step = Math.ceil(rows.length / Math.max(2, Math.floor((w - ml) / 64)));
+  s.append("g").attr("transform", `translate(0,${h - 24})`)
+    .call(d3.axisBottom(x).tickValues(rows.map((d) => d.month).filter((_, i) => i % step === 0)).tickFormat(U.monthShort).tickSize(0).tickPadding(8)).call(U.axis);
+  const t = U.tip(el);
+  const peak = rows.reduce((a, b) => (b.revenue > a.revenue ? b : a));
+  s.append("g").selectAll("rect").data(rows).join("rect")
+    .attr("x", (d) => x(d.month)).attr("width", x.bandwidth())
+    .attr("y", (d) => y(d.revenue)).attr("height", (d) => y(0) - y(d.revenue))
+    .attr("rx", Math.min(4, x.bandwidth() / 2)).attr("fill", dash.colors[0])
+    .attr("fill-opacity", (d) => (d === peak ? 1 : 0.72))
+    .on("pointermove", function (ev, d) {
+      d3.select(this).attr("fill-opacity", 1);
+      t.show(ev, U.monthFull(d.month), [["Выручка " + U.compact(d.revenue)], ["Заказы " + U.int(d.orders)], ["Средний чек " + U.money(d.aov)]]);
+    })
+    .on("pointerleave", function (ev, d) { d3.select(this).attr("fill-opacity", d === peak ? 1 : 0.72); t.hide(); });
+  s.append("text").attr("class", "lab-strong").attr("text-anchor", "middle")
+    .attr("x", x(peak.month) + x.bandwidth() / 2).attr("y", y(peak.revenue) - 6).text(U.compact(peak.revenue));
+});
+</script>
+
+<script>
+dash.draw("catBars", (el) => {
+  const rows = U.ready(el, "categories");
+  if (!rows) return;
+  const data = [...rows].sort((a, b) => b.revenue - a.revenue);
+  const { s, w, h } = U.svg(el, 420);
+  const ml = U.textWidth(s, data.map((d) => d.category)) + 10;
+  const endW = U.textWidth(s, [U.compact(data[0].revenue)]) + 8;
+  const x = d3.scaleLinear([0, d3.max(data, (d) => d.revenue)], [ml, w - endW]).nice();
+  const y = d3.scaleBand(data.map((d) => d.category), [4, h - 24]).padding(0.28);
+  const xt = x.ticks(Math.max(2, Math.floor((w - ml) / 90)));
+  s.append("g").attr("transform", `translate(0,${h - 24})`).call(d3.axisBottom(x).tickValues(xt).tickSize(-(h - 28)).tickFormat("")).call(U.grid);
+  s.append("g").attr("transform", `translate(0,${h - 24})`).call(d3.axisBottom(x).tickValues(xt).tickFormat(U.compact).tickSize(0).tickPadding(8)).call(U.axis).select(".domain").remove();
+  s.append("g").attr("transform", `translate(${ml},0)`).call(d3.axisLeft(y).tickSize(0).tickPadding(8)).call(U.axis).select(".domain").remove();
+  const t = U.tip(el);
+  s.append("g").selectAll("rect").data(data).join("rect")
+    .attr("x", ml).attr("y", (d) => y(d.category)).attr("height", y.bandwidth())
+    .attr("width", (d) => x(d.revenue) - ml).attr("rx", 3).attr("fill", dash.colors[0]).attr("fill-opacity", 0.85)
+    .on("pointermove", function (ev, d) {
+      d3.select(this).attr("fill-opacity", 1);
+      t.show(ev, d.category, [["Выручка " + U.compact(d.revenue)], ["Доля " + U.pct(d.share, 1)], ["Заказы " + U.int(d.orders)], ["Выручка на заказ " + U.money(d.avg_check)]]);
+    })
+    .on("pointerleave", function () { d3.select(this).attr("fill-opacity", 0.85); t.hide(); });
+  s.append("text").attr("class", "lab-strong").attr("x", x(data[0].revenue) + 6)
+    .attr("y", y(data[0].category) + y.bandwidth() / 2).attr("dy", "0.35em").text(U.compact(data[0].revenue));
+});
+</script>
+
+<script>
+dash.draw("catShift", (el) => {
+  const rows = U.ready(el, "categories");
+  if (!rows) return;
+  const data = [...rows].sort((a, b) => b.share_2018 - a.share_2018);
+  const { s, w, h } = U.svg(el, 420);
+  const ml = U.textWidth(s, data.map((d) => d.category)) + 10;
+  const top = 26;
+  const maxV = d3.max(data, (d) => Math.max(d.share_2017, d.share_2018));
+  const x = d3.scaleLinear([0, maxV], [ml, w - 12]).nice();
+  const y = d3.scaleBand(data.map((d) => d.category), [top, h - 24]).padding(0.28);
+  const xt = x.ticks(Math.max(2, Math.floor((w - ml) / 70)));
+  s.append("g").attr("transform", `translate(0,${h - 24})`).call(d3.axisBottom(x).tickValues(xt).tickSize(-(h - 24 - top)).tickFormat("")).call(U.grid);
+  s.append("g").attr("transform", `translate(0,${h - 24})`).call(d3.axisBottom(x).tickValues(xt).tickFormat((v) => U.pct(v, 0)).tickSize(0).tickPadding(8)).call(U.axis).select(".domain").remove();
+  s.append("g").attr("transform", `translate(${ml},0)`).call(d3.axisLeft(y).tickSize(0).tickPadding(8)).call(U.axis).select(".domain").remove();
+  const legend = s.append("g").attr("transform", `translate(${ml},8)`);
+  legend.append("circle").attr("r", 5).attr("cx", 5).attr("fill", "var(--cds-chart-muted)");
+  legend.append("text").attr("class", "lab").attr("x", 14).attr("dy", "0.35em").text("2017");
+  legend.append("circle").attr("r", 5).attr("cx", 64).attr("fill", dash.colors[0]);
+  legend.append("text").attr("class", "lab").attr("x", 73).attr("dy", "0.35em").text("2018");
+  const cy = (d) => y(d.category) + y.bandwidth() / 2;
+  const g = s.append("g").selectAll("g").data(data).join("g");
+  g.append("line").attr("x1", (d) => x(d.share_2017)).attr("x2", (d) => x(d.share_2018)).attr("y1", cy).attr("y2", cy)
+    .attr("stroke", "var(--cds-chart-muted)").attr("stroke-width", 2).attr("stroke-linecap", "round");
+  g.append("circle").attr("cx", (d) => x(d.share_2017)).attr("cy", cy).attr("r", 5).attr("fill", "var(--cds-chart-muted)");
+  g.append("circle").attr("cx", (d) => x(d.share_2018)).attr("cy", cy).attr("r", 5.5).attr("fill", dash.colors[0]).attr("stroke", "var(--color-panel)").attr("stroke-width", 2);
+  const t = U.tip(el);
+  g.append("rect").attr("x", ml).attr("width", w - ml).attr("y", (d) => y(d.category)).attr("height", y.bandwidth()).attr("fill", "transparent")
+    .on("pointermove", (ev, d) => {
+      const pp = (d.share_2018 - d.share_2017) * 100;
+      t.show(ev, d.category, [["2017: " + U.pct(d.share_2017, 1), "var(--cds-chart-muted)"], ["2018: " + U.pct(d.share_2018, 1), dash.colors[0]], ["Изменение " + (pp > 0 ? "+" : "") + U.d1(pp) + " п.п."]]);
+    })
+    .on("pointerleave", () => t.hide());
+});
+</script>
+
+<script>
+dash.draw("weekHour", (el) => {
+  const rows = U.ready(el, "week_hour");
+  if (!rows) return;
+  const days = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+  const daysFull = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"];
+  const { s, w, h } = U.svg(el, 260);
+  const ml = U.textWidth(s, days) + 10;
+  const legendW = 110;
+  const x = d3.scaleBand(d3.range(24), [ml, w - 4]).padding(0.06);
+  const y = d3.scaleBand(d3.range(1, 8), [4, h - 48]).padding(0.08);
+  const max = d3.max(rows, (d) => d.orders);
+  const op = d3.scaleLinear([0, max], [0.06, 1]);
+  s.append("g").attr("transform", `translate(${ml},0)`).call(d3.axisLeft(y).tickFormat((d) => days[d - 1]).tickSize(0).tickPadding(8)).call(U.axis).select(".domain").remove();
+  const every = x.bandwidth() < 22 ? 3 : 2;
+  s.append("g").attr("transform", `translate(0,${h - 48})`).call(d3.axisBottom(x).tickValues(d3.range(0, 24, every)).tickFormat((d) => String(d).padStart(2, "0")).tickSize(0).tickPadding(6)).call(U.axis).select(".domain").remove();
+  const t = U.tip(el);
+  s.append("g").selectAll("rect").data(rows).join("rect")
+    .attr("x", (d) => x(d.hour)).attr("y", (d) => y(d.dow)).attr("width", x.bandwidth()).attr("height", y.bandwidth())
+    .attr("rx", 2).attr("fill", dash.colors[0]).attr("fill-opacity", (d) => op(d.orders))
+    .on("pointermove", function (ev, d) {
+      d3.select(this).attr("stroke", "var(--color-fg)").attr("stroke-width", 1.5);
+      t.show(ev, `${daysFull[d.dow - 1]}, ${String(d.hour).padStart(2, "0")}:00–${String(d.hour).padStart(2, "0")}:59`, [["Заказы " + U.int(d.orders)]]);
+    })
+    .on("pointerleave", function () { d3.select(this).attr("stroke", null); t.hide(); });
+  const lg = s.append("g").attr("transform", `translate(${w - legendW - 4},${h - 20})`);
+  const steps = 10;
+  lg.selectAll("rect").data(d3.range(steps)).join("rect").attr("x", (i) => 34 + i * ((legendW - 68) / steps)).attr("y", -6).attr("width", (legendW - 68) / steps + 0.5).attr("height", 10)
+    .attr("fill", dash.colors[0]).attr("fill-opacity", (i) => op((i + 0.5) / steps * max));
+  lg.append("text").attr("class", "lab").attr("x", 30).attr("dy", "0.1em").attr("text-anchor", "end").text("0");
+  lg.append("text").attr("class", "lab").attr("x", legendW - 30).attr("dy", "0.1em").text(U.int(max));
+  s.append("text").attr("class", "lab").attr("x", ml).attr("y", h - 14).attr("dy", "0.1em").text("Час покупки");
+});
+</script>
+
+<script>
+dash.draw("segBars", (el) => {
+  const rows = U.ready(el, "segments");
+  if (!rows) return;
+  const data = [...rows].sort((a, b) => b.revenue_share - a.revenue_share);
+  const { s, w, h } = U.svg(el, 340);
+  const ml = U.textWidth(s, data.map((d) => d.name)) + 10;
+  const top = 26;
+  const x = d3.scaleLinear([0, d3.max(data, (d) => Math.max(d.revenue_share, d.customer_share))], [ml, w - 44]).nice();
+  const y = d3.scaleBand(data.map((d) => d.name), [top, h - 24]).padding(0.22);
+  const inner = d3.scaleBand(["customer_share", "revenue_share"], [0, y.bandwidth()]).padding(0.12);
+  const xt = x.ticks(Math.max(2, Math.floor((w - ml) / 70)));
+  s.append("g").attr("transform", `translate(0,${h - 24})`).call(d3.axisBottom(x).tickValues(xt).tickSize(-(h - 24 - top)).tickFormat("")).call(U.grid);
+  s.append("g").attr("transform", `translate(0,${h - 24})`).call(d3.axisBottom(x).tickValues(xt).tickFormat((v) => U.pct(v, 0)).tickSize(0).tickPadding(8)).call(U.axis).select(".domain").remove();
+  s.append("g").attr("transform", `translate(${ml},0)`).call(d3.axisLeft(y).tickSize(0).tickPadding(8)).call(U.axis).select(".domain").remove();
+  const colors = { customer_share: "var(--cds-chart-muted)", revenue_share: dash.colors[0] };
+  const names = { customer_share: "Доля покупателей", revenue_share: "Доля выручки" };
+  const legend = s.append("g").attr("transform", `translate(${ml},8)`);
+  let lx = 0;
+  for (const k of ["customer_share", "revenue_share"]) {
+    legend.append("rect").attr("x", lx).attr("y", -5).attr("width", 10).attr("height", 10).attr("rx", 2).attr("fill", colors[k]);
+    const tx = legend.append("text").attr("class", "lab").attr("x", lx + 15).attr("dy", "0.35em").text(names[k]);
+    lx += 15 + tx.node().getComputedTextLength() + 18;
+  }
+  const t = U.tip(el);
+  const g = s.append("g").selectAll("g").data(data).join("g").attr("transform", (d) => `translate(0,${y(d.name)})`);
+  for (const k of ["customer_share", "revenue_share"]) {
+    g.append("rect").attr("x", ml).attr("y", inner(k)).attr("height", inner.bandwidth())
+      .attr("width", (d) => Math.max(1, x(d[k]) - ml)).attr("rx", 2).attr("fill", colors[k]);
+  }
+  g.append("text").attr("class", "lab-strong").attr("x", (d) => x(d.revenue_share) + 5)
+    .attr("y", inner("revenue_share") + inner.bandwidth() / 2).attr("dy", "0.35em").text((d) => U.pct(d.revenue_share, 0));
+  g.append("rect").attr("x", ml).attr("width", w - ml).attr("height", y.bandwidth()).attr("fill", "transparent")
+    .on("pointermove", (ev, d) => t.show(ev, d.name, [
+      ["Покупатели " + U.int(d.customers) + " (" + U.pct(d.customer_share, 1) + ")", colors.customer_share],
+      ["Выручка " + U.compact(d.revenue) + " (" + U.pct(d.revenue_share, 1) + ")", colors.revenue_share],
+      ["Выручка на покупателя " + U.money(d.avg_revenue)],
+    ]))
+    .on("pointerleave", () => t.hide());
+});
+</script>
+
+<script>
+dash.draw("cohortHeat", (el) => {
+  const rows = U.ready(el, "cohorts");
+  if (!rows) return;
+  const cohorts = [...new Set(rows.map((d) => d.cohort))].sort();
+  const sizes = new Map(rows.map((d) => [d.cohort, d.cohort_size]));
+  const { s, w, h } = U.svg(el, 480);
+  const labels = cohorts.map((c) => U.monthShort(c + "-01") + "  " + U.int(sizes.get(c)));
+  const ml = U.textWidth(s, labels) + 10;
+  const x = d3.scaleBand(d3.range(1, 13), [ml, w - 4]).padding(0.06);
+  const y = d3.scaleBand(cohorts, [4, h - 44]).padding(0.08);
+  const max = d3.max(rows, (d) => d.retention);
+  const op = d3.scaleLinear([0, max], [0.05, 1]);
+  s.append("g").attr("transform", `translate(${ml},0)`).call(d3.axisLeft(y).tickFormat((c) => U.monthShort(c + "-01") + "  " + U.int(sizes.get(c))).tickSize(0).tickPadding(8)).call(U.axis).select(".domain").remove();
+  s.append("g").attr("transform", `translate(0,${h - 44})`).call(d3.axisBottom(x).tickSize(0).tickPadding(6)).call(U.axis).select(".domain").remove();
+  s.append("text").attr("class", "lab").attr("x", ml).attr("y", h - 8).text("Месяцев после первой покупки · слева — когорта и её размер");
+  const t = U.tip(el);
+  s.append("g").selectAll("rect").data(rows).join("rect")
+    .attr("x", (d) => x(d.month_number)).attr("y", (d) => y(d.cohort)).attr("width", x.bandwidth()).attr("height", y.bandwidth())
+    .attr("rx", 2).attr("fill", dash.colors[0]).attr("fill-opacity", (d) => op(d.retention))
+    .on("pointermove", function (ev, d) {
+      d3.select(this).attr("stroke", "var(--color-fg)").attr("stroke-width", 1.5);
+      t.show(ev, `Когорта ${U.monthFull(d.cohort + "-01")}`, [[`Через ${d.month_number} мес.: ${U.pct(d.retention, 2)}`], [`${U.int(d.customers)} из ${U.int(d.cohort_size)} покупателей`]]);
+    })
+    .on("pointerleave", function () { d3.select(this).attr("stroke", null); t.hide(); });
+});
+</script>
+
+<script>
+window.OL_SORT = { key: "revenue", dir: "descending" };
+for (const b of document.querySelectorAll(".tbl th button[data-sort]")) {
+  b.addEventListener("click", () => {
+    const k = b.dataset.sort;
+    const textCols = ["state", "region"];
+    window.OL_SORT = window.OL_SORT.key === k
+      ? { key: k, dir: window.OL_SORT.dir === "descending" ? "ascending" : "descending" }
+      : { key: k, dir: textCols.includes(k) ? "ascending" : "descending" };
+    for (const th of document.querySelectorAll(".tbl th")) {
+      const own = th.querySelector("button[data-sort]");
+      if (own && own.dataset.sort === k) th.setAttribute("aria-sort", window.OL_SORT.dir);
+      else th.removeAttribute("aria-sort");
+    }
+    dash.draw("statesBody");
+  });
+}
+dash.draw("statesBody", (tb) => {
+  const r = dash.data("states");
+  tb.replaceChildren();
+  if (r.status !== "ok") return;
+  const { key, dir } = window.OL_SORT;
+  const sign = dir === "ascending" ? 1 : -1;
+  const data = [...r.data].sort((a, b) => (typeof a[key] === "string" ? a[key].localeCompare(b[key]) : a[key] - b[key]) * sign);
+  const maxRev = d3.max(r.data, (d) => d.revenue);
+  const cols = [
+    ["state", (v) => v], ["region", (v) => v, "opt"], ["revenue", null], ["share", (v) => U.pct(v, 1), "opt"],
+    ["orders", U.int, "opt"], ["aov", U.money], ["avg_freight", U.money, "opt"], ["delivery_days", U.d1],
+    ["late_rate", (v) => U.pct(v, 1)], ["avg_score", U.d2, "opt"],
+  ];
+  for (const d of data) {
+    const tr = document.createElement("tr");
+    for (const [k, f, cls] of cols) {
+      const td = document.createElement("td");
+      if (cls) td.className = cls;
+      if (k === "revenue") {
+        const wrap = document.createElement("span");
+        wrap.className = "cellbar";
+        const bar = document.createElement("i");
+        bar.style.width = Math.max(2, (d.revenue / maxRev) * 72) + "px";
+        bar.style.background = dash.colors[0];
+        wrap.append(bar, U.compact(d.revenue));
+        td.append(wrap);
+      } else {
+        td.textContent = f(d[k]);
+      }
+      tr.append(td);
+    }
+    tb.append(tr);
+  }
+});
+</script>
+
+<script>
+dash.draw("aovFreight", (el) => {
+  const rows = U.ready(el, "states");
+  if (!rows) return;
+  const { s, w, h } = U.svg(el, 340);
+  const y = d3.scaleLinear(d3.extent(rows, (d) => d.aov), [h - 40, 12]).nice();
+  const yt = y.ticks(5);
+  const ml = U.textWidth(s, yt.map(U.money)) + 10;
+  const x = d3.scaleLinear(d3.extent(rows, (d) => d.avg_freight), [ml + 8, w - 28]).nice();
+  const xt = x.ticks(Math.max(2, Math.floor((w - ml) / 80)));
+  s.append("g").attr("transform", `translate(${ml},0)`).call(d3.axisLeft(y).tickValues(yt).tickSize(-(w - ml - 4)).tickFormat("")).call(U.grid);
+  s.append("g").attr("transform", `translate(0,${h - 40})`).call(d3.axisBottom(x).tickValues(xt).tickSize(-(h - 52)).tickFormat("")).call(U.grid);
+  s.append("g").attr("transform", `translate(${ml},0)`).call(d3.axisLeft(y).tickValues(yt).tickFormat(U.money).tickSize(0).tickPadding(8)).call(U.axis).select(".domain").remove();
+  s.append("g").attr("transform", `translate(0,${h - 40})`).call(d3.axisBottom(x).tickValues(xt).tickFormat(U.money).tickSize(0).tickPadding(8)).call(U.axis).select(".domain").remove();
+  s.append("text").attr("class", "lab").attr("x", w - 4).attr("y", h - 4).attr("text-anchor", "end").text("Средняя доставка на заказ →");
+  s.append("text").attr("class", "lab").attr("x", ml + 4).attr("y", 6).text("↑ Средний чек");
+  const r = d3.scaleSqrt([0, d3.max(rows, (d) => d.orders)], [4, 16]);
+  const t = U.tip(el);
+  const named = new Set(["SP", "RJ", "MG", "PB", "RR", "AP", "AL", "BA"]);
+  s.append("g").selectAll("circle").data([...rows].sort((a, b) => b.orders - a.orders)).join("circle")
+    .attr("cx", (d) => x(d.avg_freight)).attr("cy", (d) => y(d.aov)).attr("r", (d) => r(d.orders))
+    .attr("fill", dash.colors[0]).attr("fill-opacity", 0.75).attr("stroke", "var(--color-panel)").attr("stroke-width", 1.5)
+    .on("pointermove", function (ev, d) {
+      d3.select(this).attr("fill-opacity", 1);
+      t.show(ev, `${d.state} · ${d.region}`, [["Средний чек " + U.money(d.aov)], ["Доставка " + U.money(d.avg_freight)], ["Заказы " + U.int(d.orders)], ["Срок " + U.d1(d.delivery_days) + " дн."]]);
+    })
+    .on("pointerleave", function () { d3.select(this).attr("fill-opacity", 0.75); t.hide(); });
+  s.append("g").selectAll("text").data(rows.filter((d) => named.has(d.state))).join("text")
+    .attr("class", "lab-strong").attr("x", (d) => x(d.avg_freight) + r(d.orders) + 3).attr("y", (d) => y(d.aov)).attr("dy", "0.35em")
+    .attr("pointer-events", "none").text((d) => d.state);
+});
+</script>
+
+<script>
+window.OL_LINE = (el, field, fmtTick, fmtTip, label) => {
+  const rows = U.ready(el, "monthly");
+  if (!rows) return;
+  const data = rows.filter((d) => d[field] != null);
+  const { s, w, h } = U.svg(el, 260);
+  const y = d3.scaleLinear([0, d3.max(data, (d) => d[field]) * 1.18], [h - 24, 14]).nice();
+  const yt = y.ticks(4);
+  const ml = U.textWidth(s, yt.map(fmtTick)) + 10;
+  const x = d3.scalePoint(data.map((d) => d.month), [ml + 6, w - 40]);
+  s.append("g").attr("transform", `translate(${ml},0)`).call(d3.axisLeft(y).tickValues(yt).tickSize(-(w - ml - 4)).tickFormat("")).call(U.grid);
+  s.append("g").attr("transform", `translate(${ml},0)`).call(d3.axisLeft(y).tickValues(yt).tickFormat(fmtTick).tickSize(0).tickPadding(8)).call(U.axis).select(".domain").remove();
+  const step = Math.ceil(data.length / Math.max(2, Math.floor((w - ml) / 64)));
+  s.append("g").attr("transform", `translate(0,${h - 24})`).call(d3.axisBottom(x).tickValues(data.map((d) => d.month).filter((_, i) => i % step === 0)).tickFormat(U.monthShort).tickSize(0).tickPadding(8)).call(U.axis);
+  const gid = "g" + field + Math.random().toString(36).slice(2, 7);
+  const grad = s.append("defs").append("linearGradient").attr("id", gid).attr("x1", 0).attr("x2", 0).attr("y1", 0).attr("y2", 1);
+  [[0, 0.26], [0.25, 0.16], [0.5, 0.08], [0.75, 0.03], [1, 0]].forEach(([o, a]) => grad.append("stop").attr("offset", o).attr("style", `stop-color:${dash.colors[0]};stop-opacity:${a}`));
+  s.append("path").datum(data).attr("fill", `url(#${gid})`).attr("d", d3.area().x((d) => x(d.month)).y0(y(0)).y1((d) => y(d[field])));
+  s.append("path").datum(data).attr("fill", "none").attr("stroke", dash.colors[0]).attr("stroke-width", 2).attr("stroke-linejoin", "round").attr("stroke-linecap", "round")
+    .attr("d", d3.line().x((d) => x(d.month)).y((d) => y(d[field])));
+  const last = data[data.length - 1];
+  s.append("circle").attr("cx", x(last.month)).attr("cy", y(last[field])).attr("r", 4).attr("fill", dash.colors[0]);
+  s.append("text").attr("class", "lab-strong").attr("x", x(last.month) + 7).attr("y", y(last[field])).attr("dy", "0.35em").text(fmtTick(last[field]));
+  const peak = data.reduce((a, b) => (b[field] > a[field] ? b : a));
+  s.append("circle").attr("cx", x(peak.month)).attr("cy", y(peak[field])).attr("r", 4).attr("fill", dash.colors[0]);
+  s.append("text").attr("class", "lab-strong").attr("x", x(peak.month)).attr("y", y(peak[field]) - 9).attr("text-anchor", "middle").text(fmtTick(peak[field]));
+  const dot = s.append("circle").attr("r", 5).attr("fill", dash.colors[0]).attr("stroke", "var(--color-panel)").attr("stroke-width", 2).attr("visibility", "hidden");
+  const t = U.tip(el);
+  const half = (x.step() || 10) / 2;
+  s.append("g").selectAll("rect").data(data).join("rect")
+    .attr("x", (d) => x(d.month) - half).attr("width", half * 2).attr("y", 0).attr("height", h - 24).attr("fill", "transparent")
+    .on("pointermove", (ev, d) => {
+      dot.attr("cx", x(d.month)).attr("cy", y(d[field])).attr("visibility", "visible");
+      t.show(ev, U.monthFull(d.month), [[label + " " + fmtTip(d[field])], ["Заказы " + U.int(d.orders)]]);
+    })
+    .on("pointerleave", () => { dot.attr("visibility", "hidden"); t.hide(); });
+};
+dash.draw("deliveryLine", (el) => window.OL_LINE(el, "delivery_days", (v) => U.d1(v).replace(/,0$/, "") + " дн.", (v) => U.d1(v) + " дн.", "Срок"));
+dash.draw("lateLine", (el) => window.OL_LINE(el, "late_rate", (v) => U.pct(v, 0), (v) => U.pct(v, 1), "Опоздали"));
+</script>
+
+<script>
+dash.draw("scoreEstimate", (el) => {
+  const rows = U.ready(el, "estimate");
+  if (!rows) return;
+  const { s, w, h } = U.svg(el, 340);
+  const y = d3.scaleLinear([1, 5], [h - 40, 14]);
+  const yt = [1, 2, 3, 4, 5];
+  const ml = U.textWidth(s, yt.map(String)) + 10;
+  const x = d3.scaleLinear(d3.extent(rows, (d) => d.days_before_estimate), [ml + 6, w - 12]);
+  const xt = x.ticks(Math.max(3, Math.floor((w - ml) / 60)));
+  s.append("g").attr("transform", `translate(${ml},0)`).call(d3.axisLeft(y).tickValues(yt).tickSize(-(w - ml - 4)).tickFormat("")).call(U.grid);
+  s.append("g").attr("transform", `translate(${ml},0)`).call(d3.axisLeft(y).tickValues(yt).tickFormat((v) => U.d1(v).replace(/,0$/, "")).tickSize(0).tickPadding(8)).call(U.axis).select(".domain").remove();
+  s.append("g").attr("transform", `translate(0,${h - 40})`).call(d3.axisBottom(x).tickValues(xt).tickFormat((v) => (v > 0 ? "+" : "") + v).tickSize(0).tickPadding(8)).call(U.axis).select(".domain").remove();
+  s.append("text").attr("class", "lab").attr("x", w - 4).attr("y", h - 4).attr("text-anchor", "end").text("Дней до обещанной даты (меньше нуля — опоздание)");
+  s.append("rect").attr("x", x(x.domain()[0])).attr("width", x(-0.5) - x(x.domain()[0])).attr("y", 14).attr("height", h - 54)
+    .attr("fill", "var(--cds-chart-status-critical)").attr("fill-opacity", 0.07);
+  s.append("line").attr("class", "ref").attr("x1", x(-0.5)).attr("x2", x(-0.5)).attr("y1", 14).attr("y2", h - 40);
+  s.append("text").attr("class", "lab").attr("x", x(-0.5) - 6).attr("y", 26).attr("text-anchor", "end").text("опоздание");
+  s.append("text").attr("class", "lab").attr("x", x(-0.5) + 6).attr("y", 26).text("раньше срока");
+  s.append("path").datum(rows).attr("fill", "none").attr("stroke", dash.colors[0]).attr("stroke-width", 2).attr("stroke-linejoin", "round").attr("stroke-linecap", "round")
+    .attr("d", d3.line().x((d) => x(d.days_before_estimate)).y((d) => y(d.avg_score)));
+  const lo = rows.find((d) => d.days_before_estimate === -10) || rows[0];
+  const hi = rows.find((d) => d.days_before_estimate === 10) || rows[rows.length - 1];
+  for (const d of [lo, hi]) {
+    s.append("circle").attr("cx", x(d.days_before_estimate)).attr("cy", y(d.avg_score)).attr("r", 4).attr("fill", dash.colors[0]);
+    s.append("text").attr("class", "lab-strong").attr("x", x(d.days_before_estimate)).attr("y", y(d.avg_score) - 10).attr("text-anchor", "middle").text(U.d2(d.avg_score));
+  }
+  const dot = s.append("circle").attr("r", 5).attr("fill", dash.colors[0]).attr("stroke", "var(--color-panel)").attr("stroke-width", 2).attr("visibility", "hidden");
+  const t = U.tip(el);
+  const half = (x(1) - x(0)) / 2;
+  s.append("g").selectAll("rect").data(rows).join("rect")
+    .attr("x", (d) => x(d.days_before_estimate) - half).attr("width", half * 2).attr("y", 0).attr("height", h - 40).attr("fill", "transparent")
+    .on("pointermove", (ev, d) => {
+      dot.attr("cx", x(d.days_before_estimate)).attr("cy", y(d.avg_score)).attr("visibility", "visible");
+      const v = d.days_before_estimate;
+      const head = v < 0 ? `Опоздание на ${-v} дн.${v === -20 ? " и больше" : ""}` : v === 0 ? "В обещанный день" : `За ${v} дн. до срока${v === 30 ? " и раньше" : ""}`;
+      t.show(ev, head, [["Средняя оценка " + U.d2(d.avg_score)], ["Заказы " + U.int(d.orders)]]);
+    })
+    .on("pointerleave", () => { dot.attr("visibility", "hidden"); t.hide(); });
+});
+</script>
+
+<script>
+(() => {
+  const tabs = () => document.querySelectorAll(".ol-tab[data-tab]");
+  const show = (id, link) => {
+    for (const b of tabs()) b.setAttribute("aria-selected", String(b.dataset.tab === id));
+    for (const sec of document.querySelectorAll(".ol-page")) sec.hidden = sec.id !== id;
+    dash.runAll();
+    if (link) dash.setLink(id);
+  };
+  for (const b of tabs()) b.addEventListener("click", () => show(b.dataset.tab, true));
+  const named = location.hash.slice(1);
+  if (named && document.getElementById(named)?.classList.contains("ol-page")) show(named, false);
+})();
+</script>
+
+<footer class="site-foot">
+  <span>Данные: Brazilian E-Commerce Public Dataset by Olist (Kaggle), слой Gold проекта Retail Analytics Platform.</span>
+  <span>Выгрузка: <span id="generated-at">—</span></span>
+</footer>
+<script>
+(() => {
+  const el = document.getElementById("generated-at");
+  const at = window.DASH_DATA && window.DASH_DATA.generated_at;
+  if (el && at) el.textContent = new Date(at).toLocaleString("ru-RU", { dateStyle: "long", timeStyle: "short" });
+  if (!window.d3) {
+    const p = document.createElement("p");
+    p.textContent = "Не удалось загрузить библиотеку графиков d3. Проверьте подключение к интернету и обновите страницу.";
+    p.style.color = "var(--color-bad)";
+    document.querySelector(".page").prepend(p);
+  }
+})();
+</script>
+</div>
+</body>
+</html>
