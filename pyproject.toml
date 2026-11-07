@@ -1,0 +1,23 @@
+[project]
+name = "unified-retail-analytics"
+version = "0.1.0"
+description = "Olist e-commerce analytics: data preparation (Bronze, Silver, Gold) and analysis"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.2",
+    "pyarrow>=15",
+    "kagglehub>=0.3",
+    "pyspark==3.5.3",
+    "duckdb>=1.1",
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+notebooks = ["jupyter", "nbclient"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["src*"]
